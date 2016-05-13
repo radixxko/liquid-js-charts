@@ -1,0 +1,29 @@
+# Packages #
+############
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs #
+########
+*.log
+*.sql
+*.sqlite
+
+# OS #
+######
+.DS_Store
+.DS_Store?
+._*
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Builds #
+##########
+node_modules/
