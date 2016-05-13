@@ -1,14 +1,32 @@
 window.Chart = new( function()
 {
-	var pixelRatio = window.devicePixelRatio;
-	
-	var charts = [];
-	
-	var chart_types = 
+	var __module__ = 
 	{
-		pie: function( canvas, data, options )
+		'datasets/radial.js': function( data )
 		{
-			function randomColor( id )
+			var self = this;
+		
+			this.values = {};
+			this.sum = 0;
+		
+			this.updateData = function( data )
+			{
+				self.values = {};
+				self.sum = 0;
+		
+				for( var segment in data )
+				{
+					self.values[segment] = data[segment];
+					self.sum += data[segment];
+				}
+			}
+		
+			self.updateData( data );
+		},
+
+		'helpers/color.js': 
+		{
+			randomColor: function( id )
 			{
 				var colors = [ 'F44336', '3F51B5', '009688', '8E24AA', 'FFEB3B' ];
 		
@@ -22,10 +40,15 @@ window.Chart = new( function()
 		
 				return color;
 			}
+		},
+
+		'charts/pie.js': function( canvas, data, options )
+		{
+			var dataset = new __module__['datasets/radial.js']( data );
 		
 			var pixelRatio = window.devicePixelRatio,
 				context = canvas.getContext('2d'),
-				chart = { data: data, event: { hover: null } };
+				chart = { dataset: dataset, event: { hover: null } };
 		
 			var defaults =
 			{
@@ -45,12 +68,10 @@ window.Chart = new( function()
 		
 				var fraction = 0;
 		
-				for( var segment in chart.data.values )
+				for( var segment in chart.dataset.values )
 				{
-					console.log(segment);
-		
 					var startAngle = (( 360 * fraction - 90) * Math.PI ) / 180,
-						endAngle = startAngle + 2 * chart.data.values[segment] / chart.data.sum * Math.PI,
+						endAngle = startAngle + 2 * chart.dataset.values[segment] / chart.dataset.sum * Math.PI,
 		
 						outerSpacing = pixelRatio * options.segmentSpacing / ( 2 * chart.radius );
 						innerSpacing = pixelRatio * options.segmentSpacing / ( 2 * chart.innerRadius );
@@ -66,7 +87,7 @@ window.Chart = new( function()
 					    context.arc(chart.center.x, chart.center.y, chart.radius, startAngle + outerSpacing, endAngle - outerSpacing, false);
 				    }
 				    context.closePath();
-				    context.fillStyle = randomColor(10);
+				    context.fillStyle = __module__['helpers/color.js'].randomColor(10);
 					context.fill();
 		
 					if( chart.event.hover == segment )
@@ -92,18 +113,18 @@ window.Chart = new( function()
 					context.textAlign = 'center';
 					context.fillStyle = 'white';
 		
-					var label = Math.round(chart.data.values[segment] / chart.data.sum * 1000)/10+'%';
+					var label = Math.round(chart.dataset.values[segment] / chart.dataset.sum * 1000)/10+'%';
 		
 					if( context.measureText(label).width < chart.radius - chart.innerRadius )
 					{
-						context.fillText(label, chart.center.x + Math.cos( ( 2 * fraction + chart.data.values[segment] / chart.data.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2, chart.center.y + font_size / 3 + Math.sin( ( 2 * fraction + chart.data.values[segment] / chart.data.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2);
+						context.fillText(label, chart.center.x + Math.cos( ( 2 * fraction + chart.dataset.values[segment] / chart.dataset.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2, chart.center.y + font_size / 3 + Math.sin( ( 2 * fraction + chart.dataset.values[segment] / chart.dataset.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2);
 					}
 		
 					context.textAlign = 'center';
 					context.fillStyle = 'black';
 					context.fillText( chart.event.hover == segment ? segment : 'Graf' , chart.center.x, chart.center.y);
 		
-					fraction += chart.data.values[segment] / chart.data.sum;
+					fraction += chart.dataset.values[segment] / chart.dataset.sum;
 				}
 			}
 		
@@ -119,9 +140,9 @@ window.Chart = new( function()
 						var event_fraction = 1 - (Math.atan2(position.x - chart.center.x, position.y - chart.center.y) * (180 / Math.PI) - 180 + 720) % 360 / 360,
 							fraction = 0;
 		
-						for( var segment in chart.data.values )
+						for( var segment in chart.dataset.values )
 						{
-							if( event_fraction <= ( fraction += chart.data.values[segment] ) / chart.data.sum )
+							if( event_fraction <= ( fraction += chart.dataset.values[segment] ) / chart.dataset.sum )
 							{
 								hover = segment; break;
 							}
@@ -150,12 +171,20 @@ window.Chart = new( function()
 		
 			this.updateData = function( data )
 			{
-				chart.data = data;
+				chart.dataset.updateData( data );
 				render();
 			}
 		
 			render();
 		}
+	}
+var pixelRatio = window.devicePixelRatio;
+	
+	var charts = [];
+	
+	var chart_types = 
+	{
+		pie: __module__['charts/pie.js']
 	}
 	
 	function viewportPosition( element )
@@ -223,5 +252,4 @@ window.Chart = new( function()
 			charts.push({ chart: chart, element: element, canvas: canvas, width: element.offsetWidth, height: element.offsetHeight });
 		}
 	}
-	
 })();

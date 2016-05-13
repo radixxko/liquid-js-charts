@@ -1,23 +1,10 @@
 module.exports = function( canvas, data, options )
-{
-	function randomColor( id )
-	{
-		var colors = [ 'F44336', '3F51B5', '009688', '8E24AA', 'FFEB3B' ];
-		
-		if( id < colors.length ){ return '#' + colors[id]; }
-		
-		var color = '#';
-		for( var i = 0; i < 6; ++i )
-		{
-			color += '0123456789ABCDEF'.charAt(Math.floor(Math.random()*16));
-		}
-		
-		return color;
-	}
+{	
+	var dataset = new require('datasets/radial.js')( data );
 	
 	var pixelRatio = window.devicePixelRatio, 
 		context = canvas.getContext('2d'), 
-		chart = { data: data, event: { hover: null } };
+		chart = { dataset: dataset, event: { hover: null } };
 	
 	var defaults = 
 	{
@@ -37,12 +24,10 @@ module.exports = function( canvas, data, options )
 		
 		var fraction = 0;
 		
-		for( var segment in chart.data.values )
+		for( var segment in chart.dataset.values )
 		{
-			console.log(segment);
-			
 			var startAngle = (( 360 * fraction - 90) * Math.PI ) / 180,
-				endAngle = startAngle + 2 * chart.data.values[segment] / chart.data.sum * Math.PI,
+				endAngle = startAngle + 2 * chart.dataset.values[segment] / chart.dataset.sum * Math.PI,
 				
 				outerSpacing = pixelRatio * options.segmentSpacing / ( 2 * chart.radius );
 				innerSpacing = pixelRatio * options.segmentSpacing / ( 2 * chart.innerRadius );
@@ -58,7 +43,7 @@ module.exports = function( canvas, data, options )
 			    context.arc(chart.center.x, chart.center.y, chart.radius, startAngle + outerSpacing, endAngle - outerSpacing, false);
 		    }
 		    context.closePath();
-		    context.fillStyle = randomColor(10);
+		    context.fillStyle = require('helpers/color.js').randomColor(10);
 			context.fill();
 			
 			if( chart.event.hover == segment )
@@ -84,18 +69,18 @@ module.exports = function( canvas, data, options )
 			context.textAlign = 'center';
 			context.fillStyle = 'white';
 			
-			var label = Math.round(chart.data.values[segment] / chart.data.sum * 1000)/10+'%';
+			var label = Math.round(chart.dataset.values[segment] / chart.dataset.sum * 1000)/10+'%';
 			
 			if( context.measureText(label).width < chart.radius - chart.innerRadius )
 			{
-				context.fillText(label, chart.center.x + Math.cos( ( 2 * fraction + chart.data.values[segment] / chart.data.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2, chart.center.y + font_size / 3 + Math.sin( ( 2 * fraction + chart.data.values[segment] / chart.data.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2);
+				context.fillText(label, chart.center.x + Math.cos( ( 2 * fraction + chart.dataset.values[segment] / chart.dataset.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2, chart.center.y + font_size / 3 + Math.sin( ( 2 * fraction + chart.dataset.values[segment] / chart.dataset.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2);
 			}
 			
 			context.textAlign = 'center';
 			context.fillStyle = 'black';
 			context.fillText( chart.event.hover == segment ? segment : 'Graf' , chart.center.x, chart.center.y);
 			    
-			fraction += chart.data.values[segment] / chart.data.sum;
+			fraction += chart.dataset.values[segment] / chart.dataset.sum;
 		}
 	}
 			
@@ -111,9 +96,9 @@ module.exports = function( canvas, data, options )
 				var event_fraction = 1 - (Math.atan2(position.x - chart.center.x, position.y - chart.center.y) * (180 / Math.PI) - 180 + 720) % 360 / 360,
 					fraction = 0;
 				
-				for( var segment in chart.data.values )
+				for( var segment in chart.dataset.values )
 				{
-					if( event_fraction <= ( fraction += chart.data.values[segment] ) / chart.data.sum )
+					if( event_fraction <= ( fraction += chart.dataset.values[segment] ) / chart.dataset.sum )
 					{
 						hover = segment; break;
 					}
@@ -126,11 +111,23 @@ module.exports = function( canvas, data, options )
 				render();
 			}
 		}
+		else if( event == 'mouseout' )
+		{
+			if( chart.event.hover )
+			{
+				chart.event.hover = null;
+				render();
+			}
+		}
+		else if( event == 'resize' )
+		{
+			render();
+		}
 	}
 	
 	this.updateData = function( data )
 	{
-		chart.data = data;
+		chart.dataset.updateData( data );
 		render();
 	}
 	
