@@ -2,7 +2,33 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
+		<script type="text/javascript" src="chart.js"></script>
+		<style type="text/css">
+			html, body{ width:100%; height:100%; overflow:hidden; }
+			.chart{ position:relative;float:left;margin:1%;width:23%;height:46%; }
+		</style>
 	</head>
 	<body>
+		<div id="canvas1" class="chart"></div>
+		<div id="canvas2" class="chart"></div>
+		<div id="canvas3" class="chart"></div>
+		<div id="canvas4" class="chart"></div>
+		<div id="canvas5" class="chart"></div>
+		<div id="canvas6" class="chart"></div>
+		<script type="text/javascript">
+			var chart = Chart.create( 'pie', 'canvas1', { janko: 5, hrasko: 6, marienka: 3, fero: 2 }, { innerRadiusRatio: 2/3, segmentSpacing: 2, labels: { janko: { color: 'red' } } });
+			
+			setInterval(function()
+			{
+				chart.updateData({ janko: 5, hrasko: 6, marienka: 3, fero: 2 });
+			}, 
+			1000);
+			
+			var chart2 = Chart.create( 'pie', 'canvas2', { janko: 5, hrasko: 6, marienka: 3, fero: 2 }, { innerRadiusRatio: 2/3, segmentSpacing: 2, labels: { janko: { color: 'red' } } });
+			var chart3 = Chart.create( 'pie', 'canvas3', { janko: 5, hrasko: 6, marienka: 3, fero: 2 }, { innerRadiusRatio: 1/3, segmentSpacing: 3, labels: { janko: { color: 'red' } } });
+			var chart4 = Chart.create( 'pie', 'canvas4', { janko: 5, hrasko: 6, marienka: 3, fero: 2 }, { innerRadiusRatio: 0, segmentSpacing: 0, labels: { janko: { color: 'red' } } });
+			var chart5 = Chart.create( 'pie', 'canvas5', { janko: 5, hrasko: 6, marienka: 3, fero: 2 }, { innerRadiusRatio: 7/8, segmentSpacing: 2, labels: { janko: { color: 'red' } } });
+			var chart6 = Chart.create( 'pie', 'canvas6', { janko: 5, hrasko: 6, marienka: 3, fero: 2 }, { innerRadiusRatio: 2/3, segmentSpacing: 0, '3d': true, labels: { janko: { color: 'red' } } });
+		</script>
 	</body>
 </html>

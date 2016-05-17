@@ -4,27 +4,6 @@ const fs = require('fs');
 
 var modules = {}, module_order = [];
 
-function buildOld( source )
-{
-	var requireRE = /require\(\s*["']([^"']+)["']\s*\)\s*[;]{0,1}/gi,
-		requireMatch;
-	
-	while( requireMatch = requireRE.exec(source) )
-	{
-		var prefix = '', lineStart = source.lastIndexOf('\n', requireRE.lastIndex-1);
-		
-		while( lineStart != -1 && ++lineStart < source.length && '\t '.indexOf(source[lineStart]) > -1 ){ prefix += source[lineStart]; }
-		
-		var module = fs.readFileSync(SRC + requireMatch[1], 'utf8').replace(/^module\.exports\s*=\s*/,'').replace(/[\r\t ]*\n/mg, '\n'+prefix).trim();
-		
-		source = source.substr(0, requireRE.lastIndex - requireMatch[0].length ) + module + source.substr(requireRE.lastIndex);
-		
-		requireRE.lastIndex -= requireMatch[0].length;
-	}
-	
-	return source;
-}
-
 function build( source, module )
 {
 	var requireRE = /require\(\s*["']([^"']+)["']\s*\)/gi, requireMatch;
@@ -90,13 +69,16 @@ function build( source, module )
 
 try
 {
-	fs.writeFileSync(DIST + main, build(fs.readFileSync(SRC + main, 'utf8')), 'utf8');
+	var library = build(fs.readFileSync(SRC + main, 'utf8'));
+	
+	fs.writeFileSync(DIST + main, library, 'utf8');
+	fs.writeFileSync('examples/' + main, library, 'utf8');
 	
 	console.log('Build "'+main+'" successful!');
 	
 	try
 	{
-		var compressor = require('/var/node/node-minify');
+		var compressor = require('node-minify');
 		
 		new compressor.minify(
 		{

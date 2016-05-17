@@ -1,10 +1,8 @@
 module.exports = function( canvas, data, options )
 {	
-	var dataset = new require('datasets/radial.js')( data );
-	
 	var pixelRatio = window.devicePixelRatio, 
 		context = canvas.getContext('2d'), 
-		chart = { dataset: dataset, event: { hover: null } };
+		chart = { event: { hover: null } };
 	
 	var defaults = 
 	{
@@ -29,8 +27,8 @@ module.exports = function( canvas, data, options )
 			var startAngle = (( 360 * fraction - 90) * Math.PI ) / 180,
 				endAngle = startAngle + 2 * chart.dataset.values[segment] / chart.dataset.sum * Math.PI,
 				
-				outerSpacing = pixelRatio * options.segmentSpacing / ( 2 * chart.radius );
-				innerSpacing = pixelRatio * options.segmentSpacing / ( 2 * chart.innerRadius );
+				outerSpacing = pixelRatio * ( options.segmentSpacing != 0 ? options.segmentSpacing : -0.5 ) / ( 2 * chart.radius );
+				innerSpacing = pixelRatio * ( options.segmentSpacing != 0 ? options.segmentSpacing : -0.5 ) / ( 2 * chart.innerRadius );
 				
 		    context.beginPath();
 		    {
@@ -38,12 +36,13 @@ module.exports = function( canvas, data, options )
 			    {
 				    context.arc(chart.center.x, chart.center.y, chart.innerRadius, endAngle - innerSpacing, startAngle + innerSpacing, true);
 				}
-				else{ context.moveTo(chart.center.x, chart.center.y); }
+				else{ context.moveTo(chart.center.x, chart.center.y); } // Todo: posunut stred 0.5px v proti smere segmentu nech nevidno biele medzery medzi segmentami
 			    
 			    context.arc(chart.center.x, chart.center.y, chart.radius, startAngle + outerSpacing, endAngle - outerSpacing, false);
 		    }
 		    context.closePath();
-		    context.fillStyle = require('helpers/color.js').randomColor(10);
+		    
+			context.fillStyle = chart.dataset.colors[segment];
 			context.fill();
 			
 			if( chart.event.hover == segment )
@@ -59,7 +58,35 @@ module.exports = function( canvas, data, options )
 				    context.arc(chart.center.x, chart.center.y, chart.radius, startAngle + outerSpacing, endAngle - outerSpacing, false);
 			    }
 			    context.closePath();
-			    context.fillStyle = 'rgba(255,255,255,0.2)';
+			    context.fillStyle = 'rgba(0,0,0,0.1)';
+				context.fill();
+			}
+			
+			if( options['3d'] ) // 3D
+			{
+				context.beginPath();
+			    {
+				    if( chart.innerRadius != 0 )
+				    {
+					    context.arc(chart.center.x, chart.center.y, chart.innerRadius, endAngle - innerSpacing, startAngle + innerSpacing, true);
+					}
+					else{ context.moveTo(chart.center.x, chart.center.y); }
+				    
+				    context.arc(chart.center.x, chart.center.y, chart.radius, startAngle + outerSpacing, endAngle - outerSpacing, false);
+			    }
+			    context.closePath();
+			    var gradient = context.createRadialGradient(chart.center.x, chart.center.y, chart.innerRadius, chart.center.x, chart.center.y, chart.radius);
+			    if( chart.innerRadius != 0 )
+			    {
+					gradient.addColorStop(0,'rgba(0,0,0,'+(0.1+(1-options.innerRadiusRatio)/10)+')');
+					gradient.addColorStop(0.5,'rgba(255,255,255,'+(0.1+(1-options.innerRadiusRatio)/10)+')');
+				}
+				else
+				{
+					gradient.addColorStop(0,'rgba(255,255,255,'+(0.1+(1-options.innerRadiusRatio)/10)+')');
+				}
+				gradient.addColorStop(1,'rgba(0,0,0,'+(0.1+(1-options.innerRadiusRatio)/10)+')');
+				context.fillStyle=gradient;
 				context.fill();
 			}
 			
@@ -75,13 +102,16 @@ module.exports = function( canvas, data, options )
 			{
 				context.fillText(label, chart.center.x + Math.cos( ( 2 * fraction + chart.dataset.values[segment] / chart.dataset.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2, chart.center.y + font_size / 3 + Math.sin( ( 2 * fraction + chart.dataset.values[segment] / chart.dataset.sum - 0.5 ) * Math.PI ) * (chart.radius + chart.innerRadius) / 2);
 			}
-			
-			context.textAlign = 'center';
-			context.fillStyle = 'black';
-			context.fillText( chart.event.hover == segment ? segment : 'Graf' , chart.center.x, chart.center.y);
 			    
 			fraction += chart.dataset.values[segment] / chart.dataset.sum;
 		}
+		
+		var font_size = chart.radius / 10;
+		
+		context.font = font_size + 'px Arial, Helvetica';
+		context.textAlign = 'center';
+		context.fillStyle = 'black';
+		context.fillText( chart.event.hover ? chart.event.hover : 'Graf' , chart.center.x, chart.center.y);
 	}
 			
 	this.event =  function( event, position )
@@ -128,8 +158,7 @@ module.exports = function( canvas, data, options )
 	this.updateData = function( data )
 	{
 		chart.dataset.updateData( data );
-		render();
 	}
 	
-	render();
+	chart.dataset = new require('datasets/radial.js')( data, render );
 }

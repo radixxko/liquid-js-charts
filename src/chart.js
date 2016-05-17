@@ -11,19 +11,9 @@ Chart = function()
 	
 	function viewportPosition( element )
 	{
-		var position = { x : 0, y : 0 };
+		var bounds = element.getBoundingClientRect();
 		
-		if( element.offsetParent )
-		{	
-			do
-			{
-				position.x += element.offsetLeft - element.scrollLeft;
-				position.y += element.offsetTop - element.scrollTop;	
-			}
-			while( element = element.offsetParent );
-		}
-		
-		return position;
+		return { x : bounds.left, y : bounds.top };
 	}
 		
 	window[window.attachEvent ? 'attachEvent' : 'addEventListener'](window.attachEvent ? 'onresize' : 'resize', function()
@@ -52,6 +42,12 @@ Chart = function()
 		if( element && typeof chart_types[chart] != undefined )
 		{
 			var canvas = document.createElement('canvas');
+			var context = canvas.getContext('2d');
+			
+			context.mozImageSmoothingEnabled = true;
+			context.webkitImageSmoothingEnabled = true;
+			context.msImageSmoothingEnabled = true;
+			context.imageSmoothingEnabled = true;
 			
 			canvas.setAttribute('width', element.offsetWidth * pixelRatio);
 			canvas.setAttribute('height', element.offsetHeight * pixelRatio);
@@ -66,12 +62,16 @@ Chart = function()
 			{
 				var position = viewportPosition( element );
 				
-				chart.event('mousemove', { x: ( position.x + event.pageX ) * pixelRatio, y: ( position.y + event.pageY ) * pixelRatio });
+				chart.event('mousemove', { x: ( event.pageX - position.x ) * pixelRatio, y: ( event.pageY - position.y ) * pixelRatio });
 			});
 			
 			canvas.addEventListener('mouseout', function(event){ chart.event('mouseout'); });
 			
 			charts.push({ chart: chart, element: element, canvas: canvas, width: element.offsetWidth, height: element.offsetHeight });
+			
+			return chart;
 		}
+		
+		return null;
 	}
 }
